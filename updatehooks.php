@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * SugarCRM Community Edition is a customer relationship management program developed by
@@ -37,67 +36,12 @@
  * SugarCRM" logo and "Supercharged by SuiteCRM" logo. If the display of the logos is not
  * reasonably feasible for technical reasons, the Appropriate Legal Notices must
  * display the words "Powered by SugarCRM" and "Supercharged by SuiteCRM".
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
  */
 
- /*  ############  HOW TO USE  ############
- Run this script with PHP on the command line:
- $ php ./updatehooks.php
-
- It will search for files ending in .php in the 'logichooks' subdirectory.
-
- For each of these files it will configure the Logic Hook Method as described in the methods
- PhpDoc header's '@logichooktab' entry.
-
- The '@logichooktab' entry has the following format:
-    @logichooktab [label] [module] [sort] [event]
-
- Here are the elements:
- label: This is a short description of the hook entry. You can have spaces in the string as 
-    long as it's enclosed with double quotes.
-
- module: The module the hook is for. It's case sensitive, and must match a valid module. You
-    will receive an error if it is invalid.
-
- sort: The sort order for this hook. If you make this the string 'null' (case insensitive)
-    then the system will pick the next available sort slot.
-
- event: The event the hook is for, like 'after-save', etc.
-
- Here is an example:
-
-    * This hook method does the thing... the thing with the bean.
-    * 
-    * There might be a long description here. One that has a lot of
-    * big words and multiple lines. Who knows, anything is possible.
-    * The updatehooks.php script won't care about it. It's only
-    * looking for the lines below:
-    *
-    * @logichooktab "update Assigned User Related Label" Accounts null after_save
-    * @logichooktab updateAssignedUserRelatedLabel Accounts NULL before_save
-
- You can pass a '-D' option to get some debugging output. Otherwise the script will output
- that it's removing and adding hooks.
-
- TIPS:
- If a method doesn't have a '@logichooktab' entry in it's doc block, this script will skip
- it, and nothing will be changed.
-
- If a method has an empty '@logichooktab' entry, as in it just says @logichooktab' and
- nothing else, that method will be removed from the logic_hook.php for every module.
-
- I would recomend including this tab in every logic hook method, to insure the
- logic_hook.php files remain clean.
-
- If you move a method to a different class, or rename a method, after already running
- this script, it will not know to remove the old one. If you do move it, I would leave
- an empty function in the original class, and give it an empty '@logichooktab' entry.
- This will cause the old one to be removed from all the modules.
-
- Renaming files will not cause any issues. The script uses only the class and method
- to address hooks.
-
+/*  ############  HOW TO USE  ############
+ *  See the README.md file
  */
 
 // Make sure we're not running over the web.
@@ -117,9 +61,9 @@ if ($argv[1] === '-D'){
 /**
  * Simple Debug Output Function
  * @param String message to output
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
- */ 
+ */
 function debugOutput($text) {
     global $dbug;
     if($dbug === 1){
@@ -159,12 +103,41 @@ require_once('include/entryPoint.php');
 /**
  * Check against the list of modules to validate input
  * @param String module name
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
  * @return Bool pass/fail
- */ 
+ */
 function validateModuleName($modulename) {
     if (in_array($modulename, $GLOBALS['app_list_strings']['moduleList'])) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Check against a list of events to validate input
+ * @param String event type
+ *
+ * @author Benjamin Long <ben@offsite.guru>
+ * @return Bool pass/fail
+ */
+function validateEventType($eventtype) {
+    $events = Array(
+        "after_delete",
+        "after_relationship_add",
+        "after_relationship_delete",
+        "after_restore",
+        "after_retrieve",
+        "after_save",
+        "before_delete",
+        "before_relationship_add",
+        "before_relationship_delete",
+        "before_restore",
+        "before_save",
+        "handle_exception",
+        "process_record"
+    );
+    if (in_array($eventtype, $events)) {
         return true;
     }
     return false;
@@ -174,9 +147,9 @@ function validateModuleName($modulename) {
  * Get a list of methods under class file, pass them downstream
  *
  * @param Method $method The Method object we are running on
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
- */ 
+ */
 function getHookFunctionList($filename) {
     $classListBefore = get_declared_classes();
     require_once $filename;
@@ -198,13 +171,11 @@ function getHookFunctionList($filename) {
  * Outputs an array of LogicHook tab entries for a method
  *
  * @param Method $method The Method object we are running on
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
- */ 
+ */
 function getMethodLogicHookTab($method) {
-    //print_r($method);
     remove_logic_hook_everywhere($method);
-    //die();
     $array = Array();
     $docStr = $method->getDocComment();
     $line = strtok($docStr, "\r\n");
@@ -231,6 +202,11 @@ function getMethodLogicHookTab($method) {
             break;
             }
 
+            // validate the event type. Only warn if it doesn't match.
+            if (!validateEventType($linearray['event'])) {
+                echo "WARNING: Method \"" . $method->getName() . "\" specifies possibly invalid event Type \"" . $linearray['event'] . "\". Continuting anyway. Please Double Check.\n";
+            }
+
             $linearray['class'] = $method->getDeclaringClass()->name;
             $linearray['method'] = $method->getName();
             $linearray['file'] = str_replace(getcwd() . "/" , "", $method->getFileName());
@@ -243,7 +219,6 @@ function getMethodLogicHookTab($method) {
             $array['hook'] = $linearray;
 
             if(!empty($array)) {
-                //remove_logic_hook_everywhere($array);
                 enableLogicHook($array);
             }
         }
@@ -255,9 +230,9 @@ function getMethodLogicHookTab($method) {
  * Writes the logic hook array to the file.
  *
  * @param Array The logic hook aray
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
- */ 
+ */
 function enableLogicHook($array) {
     $newHook = Array(
         $array['hook']['sortorder'],
@@ -274,15 +249,12 @@ function enableLogicHook($array) {
  * Parses a LogicHook tab string and returns an array
  *
  * @param String $tabstring The string we parse
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
  * @return Array
- */ 
+ */
 function parseLogicHookTabString($tabstring) {
     $cleanString = ltrim(trim(preg_replace('!\s+!', ' ', $tabstring)), "/ "); // Collapse all the whitespace into single spaces, trim all whitespace, remove "/'s" from beginging of string
-    //print_r(str_getcsv($cleanString, ' '));
-    //die();
-    //$array = array_slice(explode(" ", $cleanString), 2, 4);
     $array = array_slice(str_getcsv($cleanString, ' '), 2, 4);
 
     if(empty($array)) {
@@ -302,9 +274,9 @@ function parseLogicHookTabString($tabstring) {
  * Removes a Logic Hook from all modules. Matches only Function and Class from action array.
  *
  * @param Array $method The method object were removing from every logic_hook.php file.
- * 
+ *
  * @author Benjamin Long <ben@offsite.guru>
- */ 
+ */
 function remove_logic_hook_everywhere($method) {
     require_once 'include/utils/logic_utils.php';
     $add_logic = false;
