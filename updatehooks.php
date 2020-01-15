@@ -45,7 +45,7 @@
  Run this script with PHP on the command line:
  $ php ./updatehooks.php
 
- It will search for files ending in LogicHook.php in the same directory.
+ It will search for files ending in .php in the 'logichooks' subdirectory.
 
  For each of these files it will configure the Logic Hook Method as described in the methods
  PhpDoc header's '@logichooktab' entry.
@@ -89,6 +89,14 @@
 
  I would recomend including this tab in every logic hook method, to insure the
  logic_hook.php files remain clean.
+
+ If you move a method to a different class, or rename a method, after already running
+ this script, it will not know to remove the old one. If you do move it, I would leave
+ an empty function in the original class, and give it an empty '@logichooktab' entry.
+ This will cause the old one to be removed from all the modules.
+
+ Renaming files will not cause any issues. The script uses only the class and method
+ to address hooks.
 
  */
 
@@ -325,7 +333,7 @@ function remove_logic_hook_everywhere($method) {
 }
 
 // Loop though the files
-foreach (glob(dirname(__FILE__) . "/*LogicHook.php") as $filename) {
+foreach (glob(dirname(__FILE__) . "/logichooks/*.php") as $filename) {
     debugOutput("Parsing file: $filename" . "\n");
     getHookFunctionList($filename);
 }
