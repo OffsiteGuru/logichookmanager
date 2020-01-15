@@ -108,7 +108,7 @@ require_once('include/entryPoint.php');
  * @return Bool pass/fail
  */
 function validateModuleName($modulename) {
-    if (in_array($modulename, $GLOBALS['app_list_strings']['moduleList'])) {
+    if (array_key_exists($modulename, $GLOBALS['app_list_strings']['moduleList'])) {
         return true;
     }
     return false;
