@@ -67,8 +67,13 @@ if ($argv[1] === '-D'){
 function debugOutput($text) {
     global $dbug;
     if($dbug === 1){
-        echo $text;
+        echo $text . PHP_EOL;
     }
+}
+
+// Make sure the 'logichooks' directory exists
+if (!is_dir("./logichooks")) {
+    die("Missing 'logichooks' directory!" . PHP_EOL);
 }
 
 // This finds the root of the SuiteCRM install by iterating up though the the file system until it finds the suitecrm_version.php file.
@@ -85,12 +90,12 @@ while ($dir != '/'){
     }
 }
 if (!isset($rootDir)) {
-    die("Failed to find SuiteCRM root!\n");
+    die("Failed to find SuiteCRM root!" . PHP_EOL);
 }
 
 // sanity check some things
-debugOutput('Current Directory: ' . getcwd() . "\n");
-debugOutput("Root Dir: " . $rootDir . "\n");
+debugOutput('Current Directory: ' . getcwd());
+debugOutput("Root Dir: " . $rootDir);
 
 // Going to need this for later
 if (!defined('sugarEntry')) {
@@ -156,7 +161,7 @@ function getHookFunctionList($filename) {
     $classNew = array_diff(get_declared_classes(), $classListBefore);
 
     foreach ($classNew as $class) {
-        debugOutput("Found Class: " . $class ."\n");
+        debugOutput("Found Class: " . $class);
         // get methods
         $methods = get_class_methods($class);
         $reflec = new ReflectionClass($class);
@@ -182,7 +187,7 @@ function getMethodLogicHookTab($method) {
     $searchfor = "/^\s*\*\s*\@logichooktab/";
     while ($line !== false) {
         if(preg_match($searchfor, $line) === 1 ) {
-            debugOutput("Retrieved logichooktab line: " . $line . "\n");
+            debugOutput("Retrieved logichooktab line: " . $line);
             $linearray = parseLogicHookTabString($line);
             if (empty($linearray)) {
                 break;
@@ -190,7 +195,7 @@ function getMethodLogicHookTab($method) {
 
             // validate the requested SuiteCRM module
             if (!validateModuleName($linearray['module'])) {
-                echo "ERROR: Method \"" . $method->getName() . "\" specifies invalid module \"" . $linearray['module'] . "\"\n";
+                echo "ERROR: Method \"" . $method->getName() . "\" specifies invalid module \"" . $linearray['module'] . "\"" . PHP_EOL;
                 break;
             }
 
@@ -198,13 +203,13 @@ function getMethodLogicHookTab($method) {
             if(strtolower($linearray['sortorder']) === 'null'){
                 $linearray['sortorder'] = null;
             } elseif(!ctype_digit($linearray['sortorder'])) {
-                echo "ERROR: Method \"" . $method->getName() . "\" specifies invalid sort-order \"" . $linearray['sortorder'] . "\". Must be numeric or 'null'.\n";
+                echo "ERROR: Method \"" . $method->getName() . "\" specifies invalid sort-order \"" . $linearray['sortorder'] . "\". Must be numeric or 'null'." . PHP_EOL;
             break;
             }
 
             // validate the event type. Only warn if it doesn't match.
             if (!validateEventType($linearray['event'])) {
-                echo "WARNING: Method \"" . $method->getName() . "\" specifies possibly invalid event Type \"" . $linearray['event'] . "\". Continuting anyway. Please Double Check.\n";
+                echo "WARNING: Method \"" . $method->getName() . "\" specifies possibly invalid event Type \"" . $linearray['event'] . "\". Continuting anyway. Please Double Check." . PHP_EOL;
             }
 
             $linearray['class'] = $method->getDeclaringClass()->name;
@@ -241,7 +246,7 @@ function enableLogicHook($array) {
         $array['hook']['class'],
         $array['hook']['method']
     );
-    echo "Adding hook \"" .  $array['hook']['class'] . "::" . $array['hook']['method'] . " in module \"" . $array['module'] . "\" for event \"". $array['event'] . "\"\n";
+    echo "Adding hook \"" .  $array['hook']['class'] . "::" . $array['hook']['method'] . " in module \"" . $array['module'] . "\" for event \"". $array['event'] . "\"" . PHP_EOL;
     check_logic_hook_file($array['module'], $array['event'], $newHook);
 }
 
@@ -296,7 +301,7 @@ function remove_logic_hook_everywhere($method) {
                 }
             }
             if($needToWrite) {
-                echo "Removing hook \"" .  $method_class . "::" . $method_name . " in module \"" . $module_name . "\"\n";
+                echo "Removing hook \"" .  $method_class . "::" . $method_name . " in module \"" . $module_name . "\"" . PHP_EOL;
                 $new_contents = replace_or_add_logic_type($hook_array);
                 write_logic_file($module_name, $new_contents);
             }
@@ -306,7 +311,7 @@ function remove_logic_hook_everywhere($method) {
 
 // Loop though the files
 foreach (glob(dirname(__FILE__) . "/logichooks/*.php") as $filename) {
-    debugOutput("Parsing file: $filename" . "\n");
+    debugOutput("Parsing file: $filename");
     getHookFunctionList($filename);
 }
 ?>

@@ -6,7 +6,9 @@ Run this script with PHP on the command line:
 
 ```$ php ./updatehooks.php```
 
-It will search for files ending in .php in the 'logichooks' subdirectory.
+It will search for files ending in .php in the 'logichooks' subdirectory. This repo is
+configured to ignore the 'logichooks' directory so that another git repo can be used
+at that location. In any case, you'll need to create that directory.
 
 For each of these files it will configure the Logic Hook Method as described in the methods
 PhpDoc header's '**@logichooktab**' entry.
